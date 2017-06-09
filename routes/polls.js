@@ -1,27 +1,39 @@
 const express = require('express');
-const polls = require('../models/polls');
 const router = express.Router();
+const authMiddleware = require ('../authMiddleware');
+const polls = require('../models/polls');
 
-// Récupération de la liste des sondages
+router.param('id', (req, res, next, id) => {
+    const pollId = parseInt(id, 10);
+    const poll = polls.find(p => p.id === pollId);
+
+    if(!poll) return res.sendStatus(404);
+
+    req.poll = poll;
+
+    next();
+});
+
+// Retrieval of polls list
 router.get('/', (req, res) => {
     res.send(polls);
 });
 
-// Récupération d'un sondage selon son id
+// Retrieval of a specific poll by its id
 router.get('/:id', (req, res) => {
-    const id = parseInt(req.params.id, 10);
-    const poll = polls.find(u => u.id === id);
-
-    if(!poll) return res.status(404).send('Poll not found');
-    res.send(poll);
+    res.send(req.poll);
 });
 
-// Ajout d'un sondage
-router.post('/', (req, res) => {
+// Creation of a new poll
+router.post('/', authMiddleware, (req, res) => {
     const { question, answers } = req.body;
 
-    if (!question) return res.status(400).send('Missing parameter question');
-    if (!answers) return res.status(400).send('Missing parameter answers');
+    if (typeof question !== 'string') {
+        return res.status(400).send('Wrong parameter question');
+    }
+    if (!Array.isArray(answers) || answers.some(a => typeof a !== 'string') || answers.length < 2) {
+        return res.status(400).send('Wrong parameter answers');
+    }
 
     const maxId = Math.max(...polls.map(p => p.id));
 
@@ -36,30 +48,25 @@ router.post('/', (req, res) => {
     res.status(201).send(poll);
 });
 
-// Suppression d'un sondage par son id
-router.delete('/:id', (req, res) => {
-    const id = parseInt(req.params.id, 10);
-    const poll = polls.find(u => u.id === id);
-    if(!poll) return res.sendStatus(404);
-
-    const index = polls.findIndex(u => u.id === id);
-    polls.splice(index, 1); // supprime un seul élément à partir de index
+// Poll deletion by its id
+router.delete('/:id', authMiddleware, (req, res) => {
+    const index = polls.findIndex(p => p.id === req.poll.id);
+    polls.splice(index, 1); // delete one single element from polls based on its index
 
     res.status(204);
 });
 
-// Voter à un sondage (identifié par son id)
+// Vote to a poll (by its id)
 router.post('/:id/vote', (req, res) => {
-    const answer = req.body.answer;
-    const id = parseInt(req.params.id, 10);
-    const poll = polls.find(u => u.id === id);
-    if(!poll) return res.sendStatus(404);
+    const answer = parseInt(req.body.answer, 10);
 
-    if (!answer) return res.status(400).send('Missing parameter answer');
-    if(answer >= poll.answers.length) return res.status(400).send('Answer is not in the range');
+    if (typeof answer === 'undefined') return res.status(400).send('Missing parameter answer');
+    if(!(answer in req.poll.answers)) { // check if the index answer is in answers
+        return res.status(400).send('Answer is not in the range');
+    }
 
-    poll.votes.push(answer);
-    res.status(201).send(poll);
+    req.poll.votes.push(answer);
+    res.status(201).send(req.poll.votes);
 });
 
 module.exports = router;
