@@ -5,7 +5,7 @@ const polls = require('../models/polls');
 
 router.param('id', (req, res, next, id) => {
     const pollId = parseInt(id, 10);
-    const poll = polls.find(p => p.id === pollId);
+    const poll = polls.getById(pollId);
 
     if(!poll) return res.sendStatus(404);
 
@@ -14,17 +14,15 @@ router.param('id', (req, res, next, id) => {
     next();
 });
 
-// Retrieval of polls list
+
 router.get('/', (req, res) => {
-    res.send(polls);
+    res.send(polls.getAll());
 });
 
-// Retrieval of a specific poll by its id
 router.get('/:id', (req, res) => {
     res.send(req.poll);
 });
 
-// Creation of a new poll
 router.post('/', authMiddleware, (req, res) => {
     const { question, answers } = req.body;
 
@@ -35,37 +33,28 @@ router.post('/', authMiddleware, (req, res) => {
         return res.status(400).send('Wrong parameter answers');
     }
 
-    const maxId = Math.max(...polls.map(p => p.id));
+    const poll = polls.create(question, answers);
 
-    const poll = {
-         id: maxId + 1,
-         question: question,
-         answers: answers,
-         votes: []
-    };
-
-    polls.push(poll);
     res.status(201).send(poll);
 });
 
-// Poll deletion by its id
 router.delete('/:id', authMiddleware, (req, res) => {
-    const index = polls.findIndex(p => p.id === req.poll.id);
-    polls.splice(index, 1); // delete one single element from polls based on its index
+    polls.drop(req.poll.id);
 
     res.status(204);
 });
 
-// Vote to a poll (by its id)
+
 router.post('/:id/vote', (req, res) => {
-    const answer = parseInt(req.body.answer, 10);
+    const vote = parseInt(req.body.answer, 10);
 
     if (typeof answer === 'undefined') return res.status(400).send('Missing parameter answer');
-    if(!(answer in req.poll.answers)) { // check if the index answer is in answers
+    if(!(vote in req.poll.answers)) { // check if the index answer is in answers
         return res.status(400).send('Answer is not in the range');
     }
 
-    req.poll.votes.push(answer);
+    polls.vote(req.poll.id, vote);
+
     res.status(201).send(req.poll.votes);
 });
 
