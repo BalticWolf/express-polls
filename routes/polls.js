@@ -39,7 +39,7 @@ router.post('/', authMiddleware, (req, res) => {
 });
 
 router.delete('/:id', authMiddleware, (req, res) => {
-    polls.drop(req.poll.id);
+    polls.delete(req.poll.id);
 
     res.status(204);
 });
@@ -53,9 +53,9 @@ router.post('/:id/vote', (req, res) => {
         return res.status(400).send('Answer is not in the range');
     }
 
-    polls.vote(req.poll.id, vote);
+    const votes = polls.vote(req.poll.id, vote);
 
-    res.status(201).send(req.poll.votes);
+    res.status(201).send(votes);
 });
 
 module.exports = router;

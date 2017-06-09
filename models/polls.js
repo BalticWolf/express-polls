@@ -46,7 +46,9 @@ function drop(id) {
 // Vote to a poll (by its id)
 function vote(id, vote) {
     const poll = polls.find(p => p.id === id);
-    return poll.votes.push(vote);
+    poll.votes.push(vote);
+
+    return poll.votes;
 }
 
 module.exports = {
