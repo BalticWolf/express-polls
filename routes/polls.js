@@ -1,4 +1,5 @@
 const express = require('express');
+const polls = require('../models/polls');
 const router = express.Router();
 
 router.get('/:id', (req, res) =>{
@@ -8,3 +9,5 @@ router.get('/:id', (req, res) =>{
     if(!poll) return res.status(404).send('User not found');
     res.send(poll);
 });
+
+module.exports = router;

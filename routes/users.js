@@ -1,18 +1,7 @@
 const express = require('express');
+const users = require('../models/users');
 const router = express.Router();
 
-const users = [
-    {
-        id: 1,
-        username: 'Timo',
-        sex: 'M'
-    },
-    {
-        id: 2,
-        username: 'Julie',
-        sex: 'F'
-    }
-];
 
 router.get('/', (req, res) =>{
     const sex = req.query.sex;
@@ -24,8 +13,8 @@ router.get('/', (req, res) =>{
 });
 
 router.get('/:id', (req, res) =>{
-    const id = parseInt(req.params.id, 10); //enregistrement de :id qui se trouve dans la route
-    const user = users.find(u => u.id === id); //trouve l'utilisateur portant l'id :id
+    const id = parseInt(req.params.id, 10); // enregistrement de :id qui se trouve dans la route
+    const user = users.find(u => u.id === id); // trouve l'utilisateur portant l'id :id
 
     if(!user) return res.status(404).send('User not found');
     res.send(user);
