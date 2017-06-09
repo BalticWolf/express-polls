@@ -56,7 +56,10 @@ router.post('/:id/vote', (req, res) => {
     if(!poll) return res.sendStatus(404);
 
     if (!answer) return res.status(400).send('Missing parameter answer');
-    
+    if(answer >= poll.answers.length) return res.status(400).send('Answer is not in the range');
+
+    poll.votes.push(answer);
+    res.status(201).send(poll);
 });
 
 module.exports = router;
